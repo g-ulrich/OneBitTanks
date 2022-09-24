@@ -53,6 +53,7 @@ class SpriteSheet(object):
 
 class TankAssets:
     def __init__(self):
+        self.font = Font(25)
         idle, up, right, gun, gun_hit, tank_hit, tracks = self.get_sprite_list('assets/images/light_yellow_tank')
         self.idle, self.up = idle, up
         self.right, self.gun = right, gun

@@ -8,7 +8,7 @@ class Sounds:
         # music pygame object and string name
         self.music_objects = self.get_music_objects()
         self.song_obj = choice(self.music_objects)
-        self.play_menu_song()
+        # self.play_menu_song()
         # character
         self.motor = pygame.mixer.Sound('assets/sounds/tank/motor.wav')
         self.gun_shot = pygame.mixer.Sound('assets/sounds/gun/shot.wav')
