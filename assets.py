@@ -29,6 +29,27 @@ class ControlsAssets:
         self.large_font = Font(50)
 
 
+class Cursor:
+    def __init__(self):
+        pygame.mouse.set_visible(False)
+        self.pos = pygame.mouse.get_pos()
+        self.sheet = SpriteSheet('assets/images/cursor/cursor.png')
+        self.images = [
+            self.sheet.get_image(0, 0, 7, 7),
+            self.sheet.get_image(0, 7, 7, 7)
+        ]
+        self.images = [pygame.transform.scale(i, (32, 32)) for i in self.images]
+        self.index = 0
+        self.timer = datetime.now()
+
+    def update(self, surface):
+        if (datetime.now() - self.timer).total_seconds() > 1:
+            self.timer = datetime.now()
+            self.index = self.index + 1 if self.index < len(self.images) - 1 else 0
+        x, y = pygame.mouse.get_pos()
+        surface.blit(self.images[self.index], (x - 16, y - 16))
+
+
 class SpriteSheet(object):
     """ Class used to grab images out of a sprite sheet. """
 
@@ -54,17 +75,8 @@ class SpriteSheet(object):
 class TankAssets:
     def __init__(self):
         self.font = Font(25)
-        idle, up, right, gun, gun_hit, tank_hit, tracks = self.get_sprite_list('assets/images/light_yellow_tank')
-        self.idle, self.up = idle, up
-        self.right, self.gun = right, gun
-        self.gun_hit, self.tank_hit = gun_hit, tank_hit
-        self.tracks = tracks
-        self.idle_flip = [pygame.transform.flip(i, flip_x=False, flip_y=True) for i in idle]
-        self.down = [pygame.transform.flip(i, flip_x=False, flip_y=True) for i in up]
-        self.left = [pygame.transform.flip(i, flip_x=True, flip_y=False) for i in right]
-        self.down_right = [pygame.transform.flip(i, flip_x=True, flip_y=True) for i in up]
-        self.down_left = [pygame.transform.flip(i, flip_x=False, flip_y=True) for i in right]
-        self.down_tank_hit = pygame.transform.flip(tank_hit, flip_x=False, flip_y=True)
+        self.idle, self.up, self.gun, self.gun_hit, self.tank_hit, self.tracks = self.get_sprite_list(
+            'assets/images/tanks/light_blue_tank')
 
     def read_json_file(self, path):
         output = ""
@@ -80,7 +92,7 @@ class TankAssets:
         frames = [sheet_map['frames'][key]['frame'] for key in sheet_map['frames'].keys()]
         images = [sheet.get_image(i['x'], i['y'], i['w'], i['h'], color_key=(0, 0, 0)) for i in frames]
         images = [pygame.transform.scale(i, (64, 64)) for i in images]
-        return images[0:3], images[4:7], images[8:11], images[12], images[13], images[14], images[15]
+        return images[0:3], images[4:7], images[8], images[9], images[10], images[11]
 
 
 class Explosion:

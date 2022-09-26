@@ -11,6 +11,8 @@ class Sounds:
         # self.play_menu_song()
         # character
         self.motor = pygame.mixer.Sound('assets/sounds/tank/motor.wav')
+        self.motor_turn = pygame.mixer.Sound('assets/sounds/tank/motor_turn.wav')
+        self.motor_turn.set_volume(.4)
         self.gun_shot = pygame.mixer.Sound('assets/sounds/gun/shot.wav')
         self.gun_hit_wall = pygame.mixer.Sound('assets/sounds/gun/hit_wall.wav')
         self.gun_hit_wall.set_volume(.05)
@@ -35,14 +37,16 @@ class Sounds:
         song.play(-1)
 
     def play_motor(self):
-        self.motor.set_volume(.1)
         self.motor.play()
+
+    def play_motor_turn(self):
+        self.motor_turn.play()
 
     def stop_motor(self):
         self.motor.stop()
 
     def play_shot(self):
-        self.gun_shot.set_volume(choice([.2, .1]))
+        self.gun_shot.set_volume(.2)
         self.gun_shot.play()
 
     def play_hit_wall(self):
