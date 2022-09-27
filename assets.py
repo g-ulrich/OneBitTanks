@@ -6,6 +6,42 @@ from datetime import datetime
 import numpy as np
 
 
+class Walls:
+    def __init__(self, general):
+        self.general = general
+        self.show_debug = False
+        self.level_rect = general.level_rect
+        # level rect sizing
+        size = 10
+        lr = self.level_rect
+        self.level_rect_with_margin = pygame.Rect(lr.x + size, lr.y + size, lr.w - (size*2), lr.h - (size*2))
+        self.internal_level_rect_hit_box = pygame.Rect(lr.x + (size*2), lr.y + (size*2), lr.w - ((size*4)+(size/4)), lr.h - (size*4))
+        self.border = pygame.transform.scale(pygame.image.load('assets/images/walls/border.png').convert(), (size, size))
+        self.border_rects = []
+        alr = self.level_rect_with_margin
+        # top borders
+        for index in range(alr.w // self.border.get_width()):
+            self.border_rects.append(['border', (alr.x * (index + 1), alr.y)])
+        # bottom borders
+        for index in range((alr.w // self.border.get_width()) - 1):
+            self.border_rects.append(['border', (alr.x * (index + 2), alr.y + alr.h - self.border.get_height())])
+        # left borders
+        for index in range(alr.h // self.border.get_height()):
+            self.border_rects.append(['border', (alr.x, alr.y * (index + 1))])
+        # right borders
+        for index in range(alr.h // self.border.get_height()):
+            self.border_rects.append(['border', (alr.w, alr.y * (index + 1))])
+
+    def blit_debug(self, surface):
+        pygame.draw.rect(surface, (255, 0, 255), self.level_rect_with_margin, 2)
+        pygame.draw.rect(surface, (255, 0, 255), self.internal_level_rect_hit_box, 2)
+
+    def update(self, surface):
+        for arr in self.border_rects:
+            if "border" in arr[0]:
+                surface.blit(self.border, arr[1])
+        self.blit_debug(surface) if self.show_debug else ""
+
 class Font:
     def __init__(self, size=15):
         # heart1 - U+005E
@@ -35,8 +71,8 @@ class Cursor:
         self.pos = pygame.mouse.get_pos()
         self.sheet = SpriteSheet('assets/images/cursor/cursor.png')
         self.images = [
-            self.sheet.get_image(0, 0, 7, 7),
-            self.sheet.get_image(0, 7, 7, 7)
+            self.sheet.get_image(0, 0, 11, 11),
+            self.sheet.get_image(0, 11, 11, 11)
         ]
         self.images = [pygame.transform.scale(i, (32, 32)) for i in self.images]
         self.index = 0
@@ -87,11 +123,12 @@ class TankAssets:
 
     def get_sprite_list(self, path):
         name = "tank"
+        size = 50
         sheet = SpriteSheet(f"{path}/{name}.png")
         sheet_map = self.read_json_file(f"{path}/{name}.json")
         frames = [sheet_map['frames'][key]['frame'] for key in sheet_map['frames'].keys()]
         images = [sheet.get_image(i['x'], i['y'], i['w'], i['h'], color_key=(0, 0, 0)) for i in frames]
-        images = [pygame.transform.scale(i, (64, 64)) for i in images]
+        images = [pygame.transform.scale(i, (size, size)) for i in images]
         return images[0:3], images[4:7], images[8], images[9], images[10], images[11]
 
 

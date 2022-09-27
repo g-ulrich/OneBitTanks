@@ -30,6 +30,7 @@ class Game:
             self.main_group.update(self.controls)
 
             # update visuals every loop
+            self.general.blit_fps(self.general.screen_surface)
             pygame.display.update()
             self.general.clock.tick(self.general.fps)
 

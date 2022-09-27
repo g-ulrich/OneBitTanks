@@ -17,6 +17,7 @@ class Controls:
         self.screen_surface_size = pygame.math.Vector2(self.screen_surface.get_size())
         self.level_rect = self.general.screen_surface.get_rect()
         self.screen_center_pos = pygame.math.Vector2((self.screen_surface.get_width() / 2, self.screen_surface.get_height() / 2))
+        pygame.mouse.set_pos(self.screen_center_pos)
         self.obj = {'pressed': [],
                     '1': {'left_click': False, 'up': False, 'down': False, 'right': False,
                            'left': False, 'space': False, 'run': False, 'esc': False,
@@ -103,6 +104,7 @@ class Controls:
                 player_num = event.joy + 1
                 if event.button == 1:
                     self.obj[f'{player_num}']['space'] = True
+                    self.obj[f'{player_num}']['left_click'] = True
                 if event.button == 3:
                     self.obj[f'{player_num}']['run'] = True
                 if event.button == 4:
@@ -117,6 +119,7 @@ class Controls:
                 player_num = event.joy + 1
                 if event.button == 1:
                     self.obj[f'{player_num}']['space'] = False
+                    self.obj[f'{player_num}']['left_click'] = False
                 if event.button == 3:
                     self.obj[f'{player_num}']['run'] = False
                 if event.button == 4:
@@ -147,6 +150,11 @@ class Controls:
                 self.joy_mouse.y = 0
             self.obj[f'1']['mouse'].x += round(self.joy_mouse.x * 10, 4)
             self.obj[f'1']['mouse'].y += round(self.joy_mouse.y * 10, 4)
+            if self.level_rect.collidepoint(self.obj[f'1']['mouse']):
+                pygame.mouse.set_pos(self.obj[f'1']['mouse'])
+            else:
+                self.obj[f'1']['mouse'].x -= round(self.joy_mouse.x * 10, 4)
+                self.obj[f'1']['mouse'].y -= round(self.joy_mouse.y * 10, 4)
         else:
             pos = pygame.mouse.get_pos()
             self.obj[f'1']['mouse'].x = pos[0]

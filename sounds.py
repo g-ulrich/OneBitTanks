@@ -18,6 +18,7 @@ class Sounds:
         self.gun_hit_wall.set_volume(.05)
         self.gun_farts = [pygame.mixer.Sound('assets/sounds/gun/fart.wav'), pygame.mixer.Sound('assets/sounds/gun/fart2.wav')]
         self.gun_hurt = pygame.mixer.Sound('assets/sounds/gun/hurt.wav')
+        self.explode = pygame.mixer.Sound('assets/sounds/gun/explode.wav')
 
     def get_music_objects(self):
         file_names = os.listdir("assets/sounds/music")
@@ -48,6 +49,9 @@ class Sounds:
     def play_shot(self):
         self.gun_shot.set_volume(.2)
         self.gun_shot.play()
+
+    def play_explode(self):
+        self.explode.play()
 
     def play_hit_wall(self):
         self.gun_hit_wall.play()
