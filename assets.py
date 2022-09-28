@@ -9,38 +9,36 @@ import numpy as np
 class Walls:
     def __init__(self, general):
         self.general = general
-        self.show_debug = False
+        self.show_debug = True
         self.level_rect = general.level_rect
         # level rect sizing
-        size = 10
+        size = 32
         lr = self.level_rect
-        self.level_rect_with_margin = pygame.Rect(lr.x + size, lr.y + size, lr.w - (size*2), lr.h - (size*2))
-        self.internal_level_rect_hit_box = pygame.Rect(lr.x + (size*2), lr.y + (size*2), lr.w - ((size*4)+(size/4)), lr.h - (size*4))
-        self.border = pygame.transform.scale(pygame.image.load('assets/images/walls/border.png').convert(), (size, size))
-        self.border_rects = []
-        alr = self.level_rect_with_margin
-        # top borders
-        for index in range(alr.w // self.border.get_width()):
-            self.border_rects.append(['border', (alr.x * (index + 1), alr.y)])
-        # bottom borders
-        for index in range((alr.w // self.border.get_width()) - 1):
-            self.border_rects.append(['border', (alr.x * (index + 2), alr.y + alr.h - self.border.get_height())])
-        # left borders
-        for index in range(alr.h // self.border.get_height()):
-            self.border_rects.append(['border', (alr.x, alr.y * (index + 1))])
-        # right borders
-        for index in range(alr.h // self.border.get_height()):
-            self.border_rects.append(['border', (alr.w, alr.y * (index + 1))])
+        self.level_rect_with_margin = pygame.Rect(lr.x + size, lr.y + size, lr.w - (size * 2), lr.h - (size * 2))
+        self.internal_level_rect_hit_box = pygame.Rect(lr.x + (size * 2), lr.y + (size * 2), lr.w - (size * 5),
+                                                       lr.h - ((size * 4) + (size / 2)))
+        self.desert = pygame.image.load('assets/images/walls/background.png').convert()
+        self.desert_rect = self.desert.get_rect()
+        self.desert_rect.center = (lr.centerx - (self.desert_rect.w / 2), lr.centery - (self.desert_rect.h / 2))
 
     def blit_debug(self, surface):
         pygame.draw.rect(surface, (255, 0, 255), self.level_rect_with_margin, 2)
         pygame.draw.rect(surface, (255, 0, 255), self.internal_level_rect_hit_box, 2)
 
+    def blit_floor(self, surface):
+        for arr in self.floor:
+            surface.blit(arr[0], arr[1])
+
+    def blit_border(self, surface):
+        self.desert_rect.topleft = self.desert_rect.topleft + self.desert_rect.size
+        pygame.draw.rect(surface, (255, 0, 0), self.desert_rect, 2)
+
     def update(self, surface):
-        for arr in self.border_rects:
-            if "border" in arr[0]:
-                surface.blit(self.border, arr[1])
-        self.blit_debug(surface) if self.show_debug else ""
+        surface.blit(self.desert, self.desert_rect.center)
+        # self.blit_floor(surface)
+        self.blit_border(surface)
+        # self.blit_debug(surface) if self.show_debug else ""
+
 
 class Font:
     def __init__(self, size=15):
@@ -111,8 +109,8 @@ class SpriteSheet(object):
 class TankAssets:
     def __init__(self):
         self.font = Font(25)
-        self.idle, self.up, self.gun, self.gun_hit, self.tank_hit, self.tracks = self.get_sprite_list(
-            'assets/images/tanks/light_blue_tank')
+        self.idle, self.up, self.gun, self.gun_hit, self.tank_hit, self.tracks, self.shadow, self.gun_shadow = self.get_sprite_list(
+            'assets/images/tanks/tank')
 
     def read_json_file(self, path):
         output = ""
@@ -129,7 +127,7 @@ class TankAssets:
         frames = [sheet_map['frames'][key]['frame'] for key in sheet_map['frames'].keys()]
         images = [sheet.get_image(i['x'], i['y'], i['w'], i['h'], color_key=(0, 0, 0)) for i in frames]
         images = [pygame.transform.scale(i, (size, size)) for i in images]
-        return images[0:3], images[4:7], images[8], images[9], images[10], images[11]
+        return images[0:3], images[4:7], images[8], images[9], images[10], images[11], images[12], images[13]
 
 
 class Explosion:

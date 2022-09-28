@@ -13,8 +13,8 @@ class SpriteGroup:
         self.walls = Walls(general)
 
     def update(self, controls):
-        self.surface.fill((28, 28, 28))
-        self.player.update(self.surface, controls, self.walls.internal_level_rect_hit_box)
+        self.surface.fill((194, 178, 128))
         self.walls.update(self.surface)
+        self.player.update(self.surface, controls, self.walls.internal_level_rect_hit_box)
         # cursor blits last
         self.cursor.update(self.surface)
