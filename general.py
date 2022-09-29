@@ -13,7 +13,7 @@ class General:
             self.screen_width = display.current_w
             self.screen_height = display.current_h
         else:
-            self.screen_width = display.current_w - 100
+            self.screen_width = display.current_w - 700
             self.screen_height = display.current_h - 200
         # declare surface object
         self.screen_surface = pygame.display.set_mode((self.screen_width, self.screen_height))

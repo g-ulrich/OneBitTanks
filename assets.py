@@ -10,34 +10,39 @@ class Walls:
     def __init__(self, general):
         self.general = general
         self.show_debug = True
-        self.level_rect = general.level_rect
-        # level rect sizing
-        size = 32
-        lr = self.level_rect
-        self.level_rect_with_margin = pygame.Rect(lr.x + size, lr.y + size, lr.w - (size * 2), lr.h - (size * 2))
-        self.internal_level_rect_hit_box = pygame.Rect(lr.x + (size * 2), lr.y + (size * 2), lr.w - (size * 5),
-                                                       lr.h - ((size * 4) + (size / 2)))
-        self.desert = pygame.image.load('assets/images/walls/background.png').convert()
-        self.desert_rect = self.desert.get_rect()
-        self.desert_rect.center = (lr.centerx - (self.desert_rect.w / 2), lr.centery - (self.desert_rect.h / 2))
+        self.screen_rect = general.level_rect
+        self.upper_level_img, self.lower_level_img, self.level_rect, self.level_outline_rect, self.level_wall_hit_box_rect = self.get_desert_rects()
+
+    def get_desert_rects(self):
+        #  only called in def __init__()
+        upper_level_img = pygame.image.load('assets/images/levels/desert/upper_level.png').convert()
+        upper_level_img.set_colorkey((0, 0, 0))
+        lower_level_img = pygame.image.load('assets/images/levels/desert/lower_level.png').convert()
+        lower_level_img.set_colorkey((0, 0, 0))
+        rect = upper_level_img.get_rect()
+        outline_rect = pygame.Rect(
+            self.screen_rect.centerx - (rect.w / 2),
+            self.screen_rect.centery - (rect.h / 2),
+            rect.w, rect.h)
+        size = 64
+        wall_hit_box_rect = pygame.Rect(
+            self.screen_rect.centerx - (rect.w / 2) + size + 2,
+            self.screen_rect.centery - (rect.h / 2) + size + 3,
+            rect.w - (size * 2) + 8,
+            rect.h - (size * 2) + 12)
+        rect.center = (self.screen_rect.centerx - (rect.w / 2), self.screen_rect.centery - (rect.h / 2))
+        return upper_level_img, lower_level_img, rect, outline_rect, wall_hit_box_rect
 
     def blit_debug(self, surface):
-        pygame.draw.rect(surface, (255, 0, 255), self.level_rect_with_margin, 2)
-        pygame.draw.rect(surface, (255, 0, 255), self.internal_level_rect_hit_box, 2)
+        pygame.draw.rect(surface, (255, 0, 0), self.level_rect, 2)
+        pygame.draw.rect(surface, (255, 0, 0), self.level_outline_rect, 2)
+        pygame.draw.rect(surface, (255, 0, 0), self.level_wall_hit_box_rect, 2)
 
-    def blit_floor(self, surface):
-        for arr in self.floor:
-            surface.blit(arr[0], arr[1])
+    def blit_upper_level(self, surface):
+        surface.blit(self.upper_level_img, self.level_rect.center)
 
-    def blit_border(self, surface):
-        self.desert_rect.topleft = self.desert_rect.topleft + self.desert_rect.size
-        pygame.draw.rect(surface, (255, 0, 0), self.desert_rect, 2)
-
-    def update(self, surface):
-        surface.blit(self.desert, self.desert_rect.center)
-        # self.blit_floor(surface)
-        self.blit_border(surface)
-        # self.blit_debug(surface) if self.show_debug else ""
+    def blit_lower_level(self, surface):
+        surface.blit(self.lower_level_img, self.level_rect.center)
 
 
 class Font:
@@ -109,8 +114,13 @@ class SpriteSheet(object):
 class TankAssets:
     def __init__(self):
         self.font = Font(25)
-        self.idle, self.up, self.gun, self.gun_hit, self.tank_hit, self.tracks, self.shadow, self.gun_shadow = self.get_sprite_list(
+        self.size = 50
+        self.idle, self.up, self.gun, self.gun_hit, self.tank_hit, _, self.shadow, self.gun_shadow = self.get_sprite_list(
             'assets/images/tanks/tank')
+        self.tracks = pygame.transform.scale(pygame.image.load('assets/images/tanks/tracks.png'), (self.size, self.size))
+        self.bullet = pygame.image.load('assets/images/tanks/bullet.png').convert()
+        self.bullet.set_colorkey((0, 0, 0))
+        self.bullet = pygame.transform.scale(self.bullet, (self.size, self.size))
 
     def read_json_file(self, path):
         output = ""
@@ -121,12 +131,11 @@ class TankAssets:
 
     def get_sprite_list(self, path):
         name = "tank"
-        size = 50
         sheet = SpriteSheet(f"{path}/{name}.png")
         sheet_map = self.read_json_file(f"{path}/{name}.json")
         frames = [sheet_map['frames'][key]['frame'] for key in sheet_map['frames'].keys()]
         images = [sheet.get_image(i['x'], i['y'], i['w'], i['h'], color_key=(0, 0, 0)) for i in frames]
-        images = [pygame.transform.scale(i, (size, size)) for i in images]
+        images = [pygame.transform.scale(i, (self.size, self.size)) for i in images]
         return images[0:3], images[4:7], images[8], images[9], images[10], images[11], images[12], images[13]
 
 
