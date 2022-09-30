@@ -11,7 +11,7 @@ class Walls:
         self.general = general
         self.show_debug = True
         self.screen_rect = general.level_rect
-        self.upper_level_img, self.lower_level_img, self.level_rect, self.level_outline_rect, self.level_wall_hit_box_rect = self.get_desert_rects()
+        self.upper_level_img, self.lower_level_img, self.level_rect, self.level_outline_rect, self.level_wall_hit_box_rect, self.tank_border_box_rect = self.get_desert_rects()
 
     def get_desert_rects(self):
         #  only called in def __init__()
@@ -27,16 +27,23 @@ class Walls:
         size = 64
         wall_hit_box_rect = pygame.Rect(
             self.screen_rect.centerx - (rect.w / 2) + size + 2,
-            self.screen_rect.centery - (rect.h / 2) + size + 3,
+            self.screen_rect.centery - (rect.h / 2) + size,
             rect.w - (size * 2) + 8,
             rect.h - (size * 2) + 12)
         rect.center = (self.screen_rect.centerx - (rect.w / 2), self.screen_rect.centery - (rect.h / 2))
-        return upper_level_img, lower_level_img, rect, outline_rect, wall_hit_box_rect
+        tank_border_box_rect = pygame.Rect(
+            wall_hit_box_rect.x + 25,
+            wall_hit_box_rect.y + 20,
+            wall_hit_box_rect.w - 50,
+            wall_hit_box_rect.h - 50
+        )
+        return upper_level_img, lower_level_img, rect, outline_rect, wall_hit_box_rect, tank_border_box_rect
 
     def blit_debug(self, surface):
         pygame.draw.rect(surface, (255, 0, 0), self.level_rect, 2)
         pygame.draw.rect(surface, (255, 0, 0), self.level_outline_rect, 2)
         pygame.draw.rect(surface, (255, 0, 0), self.level_wall_hit_box_rect, 2)
+        pygame.draw.rect(surface, (255, 0, 0), self.tank_border_box_rect, 2)
 
     def blit_upper_level(self, surface):
         surface.blit(self.upper_level_img, self.level_rect.center)
@@ -117,10 +124,13 @@ class TankAssets:
         self.size = 50
         self.idle, self.up, self.gun, self.gun_hit, self.tank_hit, _, self.shadow, self.gun_shadow = self.get_sprite_list(
             'assets/images/tanks/tank')
-        self.tracks = pygame.transform.scale(pygame.image.load('assets/images/tanks/tracks.png'), (self.size, self.size))
-        self.bullet = pygame.image.load('assets/images/tanks/bullet.png').convert()
-        self.bullet.set_colorkey((0, 0, 0))
-        self.bullet = pygame.transform.scale(self.bullet, (self.size, self.size))
+        self.tracks = self.get_tracks()
+
+    def get_tracks(self):
+        tracks = pygame.image.load('assets/images/tanks/desert_tracks.png').convert()
+        tracks.set_colorkey((0, 0, 0))
+        tracks = pygame.transform.scale(tracks, (self.size, self.size))
+        return tracks
 
     def read_json_file(self, path):
         output = ""
@@ -137,6 +147,52 @@ class TankAssets:
         images = [sheet.get_image(i['x'], i['y'], i['w'], i['h'], color_key=(0, 0, 0)) for i in frames]
         images = [pygame.transform.scale(i, (self.size, self.size)) for i in images]
         return images[0:3], images[4:7], images[8], images[9], images[10], images[11], images[12], images[13]
+
+
+class ExplosionAssets:
+    def __init__(self):
+        self.small_explosion_1_images = self.get_sprite_list(size=64,
+                                                             path='assets/images/tanks/small_explosion_1',
+                                                             file_name='small_explosion_1')
+
+    def read_json_file(self, path):
+        output = ""
+        with open(path) as f:
+            for line in f:
+                output += line
+        return json.loads(output)
+
+    def get_sprite_list(self, size, path, file_name):
+        sheet = SpriteSheet(f"{path}/{file_name}.png")
+        sheet_map = self.read_json_file(f"{path}/{file_name}.json")
+        frames = [sheet_map['frames'][key]['frame'] for key in sheet_map['frames'].keys()]
+        images = [sheet.get_image(i['x'], i['y'], i['w'], i['h'], color_key=(0, 0, 0)) for i in frames]
+        images = [pygame.transform.scale(i, (size, size)) for i in images]
+        return images
+
+
+class ExplosionSprite:
+    def __init__(self, images):
+        """
+        takes array of images
+        """
+        self.images = images
+        self.rect = self.images[0].get_rect()
+        self.index = 0
+        self.timer = datetime.now()
+        self.center = pygame.math.Vector2()
+
+    def start(self, center, slope):
+        self.center.x = center[0] - (self.rect.w /2) + (slope[0] * 30)
+        self.center.y = center[1] - (self.rect.h/2) + (slope[1] * 30)
+        self.rect.center = center
+
+    def update(self, surface):
+        if (datetime.now() - self.timer).total_seconds() > .02:
+            self.timer = datetime.now()
+            self.index += 1
+        if self.index <= len(self.images) - 1:
+            surface.blit(self.images[self.index], self.center)
 
 
 class Explosion:

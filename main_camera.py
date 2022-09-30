@@ -15,7 +15,7 @@ class SpriteGroup:
     def update(self, controls):
         self.surface.fill((194, 178, 128))
         self.walls.blit_upper_level(self.surface)
-        self.player.update(self.surface, controls, self.walls.level_wall_hit_box_rect)
+        self.player.update(self.surface, controls, self.walls.level_wall_hit_box_rect, self.walls.tank_border_box_rect)
         self.walls.blit_lower_level(self.surface)
         # self.walls.blit_debug(self.surface)
         # cursor blits last

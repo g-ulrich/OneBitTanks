@@ -1,5 +1,5 @@
 import pygame
-from assets import TankAssets, get_angle, Explosion
+from assets import TankAssets, get_angle, Explosion, ExplosionAssets, ExplosionSprite
 from datetime import datetime
 from math import cos, sin
 from random import randint, choice
@@ -48,17 +48,19 @@ class Player:
         self.backward_sound_timer = datetime.now()
         self.turn_sound_timer = datetime.now()
         # player debug
-        self.show_debug = True
+        self.show_debug = False
         # bullets
         self.player_hit = False
         self.bullets = []
-        self.bullet_color = (60, 121, 202)
+        self.bullet_color = (255, 255, 255)  # (60, 121, 202)
         self.max_bullets = 5
-        self.bullet_speed = 4
+        self.bullet_speed = 5
         self.bullet_radius = 4
         self.bullet_timer = datetime.now()
         self.bullet_delete_timer = datetime.now()
         self.bullet_expolsion = Explosion()
+        # explosions
+        self.explosion_assets = ExplosionAssets()
 
     def motor_turn_sound(self):
         if (datetime.now() - self.turn_sound_timer).total_seconds() > .08:
@@ -76,12 +78,6 @@ class Player:
             self.sounds.play_motor()
 
     def check_tank_hit_boundary(self, border_rect, dot_array):
-        border_rect = pygame.Rect(
-            border_rect.x + 25,
-            border_rect.y + 20,
-            border_rect.w - 50,
-            border_rect.h - 50
-        )
         tr = self.tank_hit_box_rect
         dot_in = False, 0
         for index, dot in enumerate(dot_array, 1):
@@ -99,7 +95,7 @@ class Player:
 
         return False, dot_in
 
-    def movement(self, surface, controls, slope, border_rect, dot_array):
+    def movement(self, surface, controls, slope, border_rect, tank_border_box_rect, dot_array):
         obj = controls.obj['1']
         if (datetime.now() - self.timer).total_seconds() > .05:
             self.timer = datetime.now()
@@ -108,7 +104,7 @@ class Player:
             if obj['up']:
                 self.forward_motor_sound()
                 self.dir = pygame.math.Vector2((slope[0] * self.tank_speed, slope[1] * self.tank_speed))
-                hit, dot_in = self.check_tank_hit_boundary(border_rect, dot_array)
+                hit, dot_in = self.check_tank_hit_boundary(tank_border_box_rect, dot_array)
                 if not hit or dot_in[1] != 1:
                     self.tank_center += self.dir
             if obj['left']:
@@ -156,11 +152,11 @@ class Player:
                 self.tracks.append([angle - 90, rect, datetime.now()])
         for index, arr in enumerate(self.tracks, 0):
             surface.blit(pygame.transform.rotate(self.assets.tracks, arr[0]), arr[1].topleft)
-            # if (datetime.now() - arr[2]).total_seconds() > 10:
-            #     try:
-            #         del self.tracks[index]
-            #     except:
-            #         del self.tracks[index]
+            if (datetime.now() - arr[2]).total_seconds() > 5:
+                try:
+                    del self.tracks[index]
+                except:
+                    del self.tracks[index]
 
     def blit_player_debug(self, surface, controls, angle, slope, dot_array):
         text_array = [f'Tank Angle: {round(angle, 3)}',
@@ -179,41 +175,48 @@ class Player:
 
     def hit_player_tank(self, arr):
         return True if self.tank_hit_box_rect.collidepoint(arr[2]) and (
-                datetime.now() - arr[-1]).total_seconds() > 1 else False
+                datetime.now() - arr[3]).total_seconds() > 1 else False
 
-    def shoot(self, surface, controls, new_gun_rect, slope, internal_level_rect_hit_box):
+    def shoot(self, surface, controls, slope, angle, internal_level_rect_hit_box):
         if controls.obj['1']['left_click'] and not len(self.bullets) >= self.max_bullets:
             if (datetime.now() - self.bullet_timer).total_seconds() > .2:
-                self.bullets.append([0, slope, pygame.math.Vector2(new_gun_rect.center), datetime.now()])
+                # center_vector = pygame.math.Vector2((new_bullet_rect.centerx - (new_bullet_rect.w / 2), new_bullet_rect.centery - (new_bullet_rect.h / 2)))
+                center_vector = pygame.math.Vector2(self.tank_center)
+                tank_explosion = ExplosionSprite(self.explosion_assets.small_explosion_1_images)
+                tank_explosion.start(center_vector, slope)
+                self.bullets.append([0, slope, center_vector, datetime.now(), tank_explosion, angle])
                 self.sounds.play_shot()
-                new_gun_rect.center = new_gun_rect.center - (pygame.math.Vector2(slope) * 5)
+                # new_bullet_rect.center = new_bullet_rect.center - (pygame.math.Vector2(slope) * 5)
                 self.bullet_timer = datetime.now()
         for index, arr in enumerate(self.bullets, 0):
-            move_x, move_y = self.bullet_speed * arr[1][0], self.bullet_speed * arr[1][1]
-            arr[2].x += move_x
-            arr[2].y += move_y
-            # pygame.draw.circle(surface,
-            #                    choice([(255, 255, 255), self.bullet_color]),
-            #                    (arr[2].x - (move_x * 4), arr[2].y - (move_y * 4)), randint(1, self.bullet_radius - 3))
-            # pygame.draw.circle(surface,
-            #                    choice([(255, 255, 255), self.bullet_color]),
-            #                    (arr[2].x - (move_x * 3), arr[2].y - (move_y * 3)), randint(1, self.bullet_radius - 2))
-            # pygame.draw.circle(surface,
-            #                    choice([(255, 255, 255), self.bullet_color]),
-            #                    (arr[2].x - (move_x * 2), arr[2].y - (move_y * 2)), randint(1, self.bullet_radius - 1))
+            slope = arr[1]
+            center_v = arr[2]
+            move_x, move_y = self.bullet_speed * slope[0], self.bullet_speed * slope[1]
+            center_v.x += move_x
+            center_v.y += move_y
+            for blip in range(3):
+                if choice([True, False]):
+                    pygame.draw.circle(surface,
+                                   choice([(230,230,230)]),
+                                   (center_v.x - (slope[0] * (blip*10)), center_v.y - (slope[1] * (blip*10))), randint(2, 6 - blip))
             pygame.draw.circle(surface,
-                               self.bullet_color,
-                               arr[2], self.bullet_radius)
+                               choice([(57,61,71), (54,69,79), (67,70,75)]),
+                               center_v, 6)
+            pygame.draw.circle(surface,
+                               choice([(57,61,71), (54,69,79), (67,70,75)]),
+                               center_v, randint(2, 6))
             # Bounce bullets
             lr = internal_level_rect_hit_box
-            if arr[2].x <= lr.left or arr[2].x >= lr.right:
+            if center_v.x <= lr.left or center_v.x >= lr.right:
                 self.sounds.play_hit_wall() if arr[0] == 0 else ""
                 arr[0] += 1
-                arr[1] = (arr[1][0] * -1, arr[1][1])
+                arr[1] = (slope[0] * -1, slope[1])
+                angle, _ = get_angle(center_v, arr[1])
             if arr[2].y <= lr.top or arr[2].y >= lr.bottom:
                 self.sounds.play_hit_wall() if arr[0] == 0 else ""
                 arr[0] += 1
-                arr[1] = (arr[1][0], arr[1][1] * -1)
+                arr[1] = (slope[0], slope[1] * -1)
+                angle, _ = get_angle(center_v, arr[1])
             # check if bullet hits player:
             self.player_hit = self.hit_player_tank(arr)
             # destroy bullets
@@ -224,7 +227,7 @@ class Player:
                     del self.bullets[index]
                 except:
                     del self.bullets[index]
-        return new_gun_rect
+        # return new_bullet_rect
 
     def blit_tank_exhaust(self, surface):
         if (datetime.now() - self.tank_exhaust_timer).total_seconds() > .05:
@@ -248,20 +251,13 @@ class Player:
         top.x = top.x + radius * cos(self.dot_index)
         top.y = top.y + radius * sin(self.dot_index)
         dots.append(top)
-        top = pygame.math.Vector2(center)
-        top.x = top.x - radius * cos(self.dot_index)
-        top.y = top.y - radius * sin(self.dot_index)
-        dots.append(top)
-
-        # for i in range(6):
-        #     dot = pygame.math.Vector2(center)
-        #     dot.x = dot.x + self.tank_circle_radius * cos(self.dot_index + 45 * i)
-        #     dot.y = dot.y + self.tank_circle_radius * sin(self.dot_index + 45 * i)
-        #     dots.append(dot)
-        # return [dots[-1], dots[0], dots[1], dots[2], dots[3], dots[4]]
+        bottom = pygame.math.Vector2(center)
+        bottom.x = bottom.x - radius * cos(self.dot_index)
+        bottom.y = bottom.y - radius * sin(self.dot_index)
+        dots.append(bottom)
         return dots
 
-    def blit_tracks_tank_gun(self, surface, controls, internal_level_rect_hit_box):
+    def blit_tracks_tank_gun(self, surface, controls, internal_level_rect_hit_box, tank_border_box_rect):
         # move dot around circumference of player circle.
         dot_array = self.get_dot_array(self.tank_rect.center)
         dot = dot_array[0]
@@ -270,7 +266,7 @@ class Player:
         # blit debug info
         self.blit_player_debug(surface, controls, angle, slope, dot_array) if self.show_debug else ""
         # move player based on simple player input. left right is axial and up down is positional movement
-        self.movement(surface, controls, slope, internal_level_rect_hit_box, dot_array)
+        self.movement(surface, controls, slope, internal_level_rect_hit_box, tank_border_box_rect, dot_array)
         # main tank
         tank_img, new_tank_rect = self.blit_rotate_center(self.img, angle - 90)
         new_tank_rect.center = self.tank_center
@@ -296,11 +292,15 @@ class Player:
         new_gun_img, new_gun_rect = self.blit_rotate_center(self.assets.gun, angle - 90)
         new_gun_rect.center = self.tank_center
         # blit bullet
-        new_gun_rect = self.shoot(surface, controls, new_gun_rect, slope, internal_level_rect_hit_box)
+        self.shoot(surface, controls, slope, angle,
+                   internal_level_rect_hit_box)
         # blit gun image shadow
         surface.blit(new_gun_shadow_img, new_gun_shadow_rect)
         # blit gun image
         surface.blit(new_gun_img, new_gun_rect)
+        # blit bullet_explosions
+        for arr in self.bullets:
+            arr[4].update(surface)
 
-    def update(self, surface, controls, internal_level_rect_hit_box):
-        self.blit_tracks_tank_gun(surface, controls, internal_level_rect_hit_box)
+    def update(self, surface, controls, internal_level_rect_hit_box, tank_border_box_rect):
+        self.blit_tracks_tank_gun(surface, controls, internal_level_rect_hit_box, tank_border_box_rect)
