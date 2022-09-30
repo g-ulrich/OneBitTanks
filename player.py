@@ -196,14 +196,21 @@ class Player:
             center_v.y += move_y
             for blip in range(3):
                 if choice([True, False]):
-                    pygame.draw.circle(surface,
-                                   choice([(230,230,230)]),
-                                   (center_v.x - (slope[0] * (blip*10)), center_v.y - (slope[1] * (blip*10))), randint(2, 6 - blip))
+                    rand_int = randint(2, 6 - blip)
+                    # dust shadow desert color
+                    pygame.draw.circle(surface, (173, 156, 104),
+                                       (center_v.x - (slope[0] * (blip * 10)), 8 + center_v.y - (slope[1] * (blip * 10))),
+                                       rand_int)
+                    pygame.draw.circle(surface, (230, 230, 230),
+                                       (center_v.x - (slope[0] * (blip * 10)), center_v.y - (slope[1] * (blip * 10))),
+                                       rand_int)
+            # desert color shadow
+            pygame.draw.circle(surface, (173, 156, 104), (center_v.x, center_v.y + 8), 6)
             pygame.draw.circle(surface,
-                               choice([(57,61,71), (54,69,79), (67,70,75)]),
+                               choice([(57, 61, 71), (54, 69, 79), (67, 70, 75)]),
                                center_v, 6)
             pygame.draw.circle(surface,
-                               choice([(57,61,71), (54,69,79), (67,70,75)]),
+                               choice([(57, 61, 71), (54, 69, 79), (67, 70, 75)]),
                                center_v, randint(2, 6))
             # Bounce bullets
             lr = internal_level_rect_hit_box
